@@ -446,8 +446,10 @@ def save_settings(api_key: str) -> str:
     return "Settings saved"
 
 
-def update_char_count(text: str) -> str:
+def update_char_count(text: str, engine: str = "Kokoro TTS") -> str:
     n = len(text) if text else 0
+    if "Bark" in (engine or ""):
+        return f"{n:,} characters · Bark TTS (local, expressive)"
     return f"{n:,} characters · Kokoro TTS (local, free)"
 
 
@@ -550,6 +552,7 @@ def generate_video(
     preview_mode, caption_font_size, caption_position,
     mt_batch_size=8, mt_bbox_shift=0,
     st_expression_scale=1.0, st_pose_style=0, st_still=True, st_preprocess="full",
+    tts_engine_choice="Kokoro TTS", bark_voice_choice=None,
     progress=gr.Progress(track_tqdm=False),
 ):
     _cancel_event.clear()
@@ -597,7 +600,6 @@ def generate_video(
     yield None, render(0), "", get_video_history()
 
     try:
-        from avatarpipeline.engines.tts.kokoro import VoiceGenerator
         from avatarpipeline.postprocess.assembler import VideoAssembler
     except ImportError as e:
         states[0] = "error"
@@ -606,6 +608,8 @@ def generate_video(
 
     try:
         speech_wav = audio_file if has_audio else None
+        _tts_engine = None  # holds the active TTS engine instance for step 2
+        use_bark = "Bark" in (tts_engine_choice or "")
         if has_audio:
             states[0] = "skipped"; times[0] = "—"
             progress(1 / TOTAL, desc="Step 1/7: Voice synthesis (skipped)")
@@ -617,9 +621,16 @@ def generate_video(
             progress(1 / TOTAL, desc="Step 1/7: Voice synthesis")
             yield None, render(1 / TOTAL), "", get_video_history()
             t0 = time.time()
-            vg = VoiceGenerator()
             speech_wav = str(AUDIO_DIR / f"speech_{run_id}.wav")
-            vg.generate(script, voice=voice_id, out_path=speech_wav)
+            if use_bark:
+                from avatarpipeline.engines.tts.bark import BarkVoiceGenerator
+                bark_id = BARK_VOICE_CHOICES.get(bark_voice_choice or "", bark_voice_choice or "en_speaker_6")
+                _tts_engine = BarkVoiceGenerator()
+                _tts_engine.generate(script, voice=bark_id, out_path=speech_wav)
+            else:
+                from avatarpipeline.engines.tts.kokoro import VoiceGenerator
+                _tts_engine = VoiceGenerator()
+                _tts_engine.generate(script, voice=voice_id, out_path=speech_wav)
             states[0] = "done"; times[0] = step_time(t0)
             yield None, render(1 / TOTAL), "", get_video_history()
 
@@ -639,7 +650,11 @@ def generate_video(
             if r16.returncode != 0:
                 raise RuntimeError(f"Audio conversion failed:\n{r16.stderr[-500:]}")
         else:
-            vg.convert_to_16k(speech_wav, speech_16k)
+            if _tts_engine is not None:
+                _tts_engine.convert_to_16k(speech_wav, speech_16k)
+            else:
+                from avatarpipeline.engines.tts.kokoro import VoiceGenerator
+                VoiceGenerator().convert_to_16k(speech_wav, speech_16k)
         states[1] = "done"; times[1] = step_time(t0)
         yield None, render(2 / TOTAL), "", get_video_history()
 
@@ -802,18 +817,27 @@ def _build_progress_html(step_states, step_times, pct, elapsed, engine="", messa
 # Text-to-Audio Only
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def generate_audio_only(script, voice_choice, progress=gr.Progress()):
+def generate_audio_only(script, voice_choice, tts_engine_choice="Kokoro TTS", bark_voice_choice=None, progress=gr.Progress()):
     if not script or not script.strip():
         return None, "Enter a script to generate audio."
-    voice_id = VOICE_CHOICES.get(voice_choice, "af_heart")
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     output_path = str(AUDIO_DIR / f"tts_{run_id}.wav")
+    use_bark = "Bark" in (tts_engine_choice or "")
     try:
-        progress(0.2, desc="Generating speech with Kokoro TTS...")
-        from avatarpipeline.engines.tts.kokoro import VoiceGenerator
-        vg = VoiceGenerator()
-        vg.generate(script, voice=voice_id, out_path=output_path)
+        if use_bark:
+            progress(0.2, desc="Loading Bark model (first run downloads ~5 GB)...")
+            from avatarpipeline.engines.tts.bark import BarkVoiceGenerator
+            bark_id = BARK_VOICE_CHOICES.get(bark_voice_choice or "", bark_voice_choice or "en_speaker_6")
+            bg = BarkVoiceGenerator()
+            progress(0.5, desc="Generating speech with Bark...")
+            bg.generate(script, voice=bark_id, out_path=output_path)
+        else:
+            voice_id = VOICE_CHOICES.get(voice_choice, "af_heart")
+            progress(0.2, desc="Generating speech with Kokoro TTS...")
+            from avatarpipeline.engines.tts.kokoro import VoiceGenerator
+            vg = VoiceGenerator()
+            vg.generate(script, voice=voice_id, out_path=output_path)
         progress(1.0, desc="Done!")
         return output_path, f"Audio saved — {Path(output_path).name}"
     except Exception as e:
@@ -995,10 +1019,71 @@ NARRATION_STEP_NAMES = [
 
 NARRATION_TTS_KOKORO = "English — Kokoro TTS"
 NARRATION_TTS_MLX_JA = "Japanese — MLX Voice"
+NARRATION_TTS_BARK = "Bark — suno/bark (Expressive, Multilingual)"
 NARRATION_TTS_CHOICES = [
     NARRATION_TTS_KOKORO,
     NARRATION_TTS_MLX_JA,
+    NARRATION_TTS_BARK,
 ]
+BARK_VOICE_CHOICES = {
+    # English
+    "Speaker 0 — English": "en_speaker_0",
+    "Speaker 1 — English": "en_speaker_1",
+    "Speaker 2 — English": "en_speaker_2",
+    "Speaker 3 — English": "en_speaker_3",
+    "Speaker 4 — English": "en_speaker_4",
+    "Speaker 5 — English": "en_speaker_5",
+    "Speaker 6 — English (default)": "en_speaker_6",
+    "Speaker 7 — English": "en_speaker_7",
+    "Speaker 8 — English": "en_speaker_8",
+    "Speaker 9 — English": "en_speaker_9",
+    # Japanese
+    "Speaker 0 — Japanese": "ja_speaker_0",
+    "Speaker 1 — Japanese": "ja_speaker_1",
+    "Speaker 2 — Japanese": "ja_speaker_2",
+    "Speaker 3 — Japanese": "ja_speaker_3",
+    "Speaker 4 — Japanese": "ja_speaker_4",
+    "Speaker 5 — Japanese": "ja_speaker_5",
+    "Speaker 6 — Japanese": "ja_speaker_6",
+    "Speaker 7 — Japanese": "ja_speaker_7",
+    # Chinese
+    "Speaker 0 — Chinese": "zh_speaker_0",
+    "Speaker 1 — Chinese": "zh_speaker_1",
+    "Speaker 2 — Chinese": "zh_speaker_2",
+    "Speaker 3 — Chinese": "zh_speaker_3",
+    "Speaker 4 — Chinese": "zh_speaker_4",
+    "Speaker 5 — Chinese": "zh_speaker_5",
+    # German
+    "Speaker 0 — German": "de_speaker_0",
+    "Speaker 1 — German": "de_speaker_1",
+    "Speaker 2 — German": "de_speaker_2",
+    "Speaker 3 — German": "de_speaker_3",
+    # French
+    "Speaker 0 — French": "fr_speaker_0",
+    "Speaker 1 — French": "fr_speaker_1",
+    "Speaker 2 — French": "fr_speaker_2",
+    "Speaker 3 — French": "fr_speaker_3",
+    # Spanish
+    "Speaker 0 — Spanish": "es_speaker_0",
+    "Speaker 1 — Spanish": "es_speaker_1",
+    "Speaker 2 — Spanish": "es_speaker_2",
+    "Speaker 3 — Spanish": "es_speaker_3",
+    # Hindi
+    "Speaker 0 — Hindi": "hi_speaker_0",
+    "Speaker 1 — Hindi": "hi_speaker_1",
+    "Speaker 2 — Hindi": "hi_speaker_2",
+    # Korean
+    "Speaker 0 — Korean": "ko_speaker_0",
+    "Speaker 1 — Korean": "ko_speaker_1",
+    "Speaker 2 — Korean": "ko_speaker_2",
+    # Portuguese
+    "Speaker 0 — Portuguese": "pt_speaker_0",
+    "Speaker 1 — Portuguese": "pt_speaker_1",
+    # Russian
+    "Speaker 0 — Russian": "ru_speaker_0",
+    "Speaker 1 — Russian": "ru_speaker_1",
+}
+
 PRESENTER_OUTPUT_MODE_CHOICES = [
     PRESENTER_OUTPUT_MODE_ALL,
     PRESENTER_OUTPUT_MODE_ONE_BY_ONE,
@@ -1155,16 +1240,22 @@ def _narration_validation_html(
 
 def _toggle_narration_tts_controls(mode: str | None):
     use_mlx = mode == NARRATION_TTS_MLX_JA
+    use_bark = mode == NARRATION_TTS_BARK
     helper = (
         "Japanese narration uses local Qwen/MLX. "
         "Choose either a saved cloned voice or a built-in Qwen preset voice such as Ono_Anna."
         if use_mlx
         else
+        "Bark TTS — expressive, multilingual. Supports non-verbal cues like [laughs], [sighs]. "
+        "First run loads the model (~8 GB RAM). Select a language-specific speaker preset below."
+        if use_bark
+        else
         "English narration uses the built-in Kokoro TTS voices."
     )
     return (
-        gr.update(visible=not use_mlx),
+        gr.update(visible=not use_mlx and not use_bark),
         gr.update(visible=use_mlx),
+        gr.update(visible=use_bark),
         gr.update(value=helper),
     )
 
@@ -1243,6 +1334,7 @@ def generate_narration_video(
     mlx_preset_voice: str | None,
     kokoro_ja_voice: str | None,
     mlx_model_choice: str | None,
+    bark_voice_choice: str | None,
     pause_secs: float,
     progress=gr.Progress(track_tqdm=False),
 ):
@@ -1287,12 +1379,14 @@ def generate_narration_video(
         return
 
     use_mlx = narration_mode == NARRATION_TTS_MLX_JA
+    use_bark = narration_mode == NARRATION_TTS_BARK
     voice_id = VOICE_CHOICES.get(voice_choice, "af_heart")
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_path = str(OUTPUT_DIR / f"narration_{run_id}.mp4")
 
     use_kokoro_ja = use_mlx and japanese_source_mode == NARRATION_JA_SOURCE_KOKORO
     use_preset_voice = use_mlx and japanese_source_mode == NARRATION_JA_SOURCE_PRESET
+    bark_id = BARK_VOICE_CHOICES.get(bark_voice_choice or "", bark_voice_choice or "en_speaker_6")
 
     if use_kokoro_ja and not kokoro_ja_voice:
         states[0] = "error"
@@ -1316,9 +1410,9 @@ def generate_narration_video(
         f"PDF: {Path(pdf_file).name}",
         f"JSON: {Path(json_file).name}",
         f"Narration engine: {narration_mode}",
-        f"Japanese voice source: {japanese_source_mode}" if use_mlx else "Japanese voice source: n/a",
-        f"Voice: {kokoro_ja_voice if use_kokoro_ja else (mlx_preset_voice if use_preset_voice else (mlx_voice_choice if use_mlx else voice_choice))}",
-        f"Model: {'Kokoro Japanese preset' if use_kokoro_ja else (mlx_model_choice if use_mlx else 'Kokoro local default')}",
+        f"Japanese voice source: {japanese_source_mode}" if use_mlx else (f"Bark voice: {bark_id}" if use_bark else "Japanese voice source: n/a"),
+        f"Voice: {kokoro_ja_voice if use_kokoro_ja else (mlx_preset_voice if use_preset_voice else (mlx_voice_choice if use_mlx else (bark_id if use_bark else voice_choice)))}",
+        f"Model: {'Kokoro Japanese preset' if use_kokoro_ja else (mlx_model_choice if use_mlx else ('suno/bark' if use_bark else 'Kokoro local default'))}",
         f"Default pause between slides: {pause_secs}s",
     ]
 
@@ -1329,11 +1423,12 @@ def generate_narration_video(
             output_path=output_path,
             voice=NARRATION_JA_KOKORO_CHOICES.get(kokoro_ja_voice or "", "jm_kumo") if use_kokoro_ja else voice_id,
             pause_seconds=float(pause_secs),
-            tts_engine="mlx" if (use_mlx and not use_kokoro_ja) else "kokoro",
+            tts_engine="bark" if use_bark else ("mlx" if (use_mlx and not use_kokoro_ja) else "kokoro"),
             mlx_voice_choice=mlx_voice_choice if (use_mlx and not use_preset_voice and not use_kokoro_ja) else None,
             mlx_preset_voice=mlx_preset_voice if use_preset_voice else None,
             mlx_model_id=mlx_model_choice if use_mlx else None,
             mlx_language="ja" if use_mlx else None,
+            bark_voice=bark_id if use_bark else None,
         )
 
         for msg, result in gen:
@@ -1442,6 +1537,7 @@ def generate_slide_presenter(
     mlx_preset_voice: str | None,
     kokoro_ja_voice: str | None,
     mlx_model_choice: str | None,
+    bark_voice_choice: str | None,
     pause_secs: float,
     lipsync_engine: str,
     enhance_face: str | bool,
@@ -1496,9 +1592,11 @@ def generate_slide_presenter(
         return
 
     use_mlx = narration_mode == NARRATION_TTS_MLX_JA
+    use_bark = narration_mode == NARRATION_TTS_BARK
     use_kokoro_ja = use_mlx and japanese_source_mode == NARRATION_JA_SOURCE_KOKORO
     use_preset_voice = use_mlx and japanese_source_mode == NARRATION_JA_SOURCE_PRESET
     voice_id = VOICE_CHOICES.get(voice_choice, "af_heart")
+    bark_id = BARK_VOICE_CHOICES.get(bark_voice_choice or "", bark_voice_choice or "en_speaker_6")
 
     if use_kokoro_ja and not kokoro_ja_voice:
         states[0] = "error"
@@ -1520,6 +1618,8 @@ def generate_slide_presenter(
         if use_preset_voice
         else mlx_voice_choice
         if use_mlx
+        else bark_id
+        if use_bark
         else voice_choice
     )
     selected_model = (
@@ -1527,6 +1627,8 @@ def generate_slide_presenter(
         if use_kokoro_ja
         else mlx_model_choice
         if use_mlx
+        else "suno/bark"
+        if use_bark
         else "Kokoro local default"
     )
 
@@ -1541,7 +1643,7 @@ def generate_slide_presenter(
         f"Slide selection: {slide_selection or 'all'}",
         f"Output mode: {output_mode}",
         f"Narration engine: {narration_mode}",
-        f"Japanese voice source: {japanese_source_mode}" if use_mlx else "Japanese voice source: n/a",
+        f"Japanese voice source: {japanese_source_mode}" if use_mlx else (f"Bark voice: {bark_id}" if use_bark else "Japanese voice source: n/a"),
         f"Voice: {selected_voice}",
         f"Model: {selected_model}",
         f"Lip-sync engine: {lipsync_engine}",
@@ -1568,11 +1670,12 @@ def generate_slide_presenter(
             output_mode=output_mode,
             voice=NARRATION_JA_KOKORO_CHOICES.get(kokoro_ja_voice or "", "jm_kumo") if use_kokoro_ja else voice_id,
             pause_seconds=float(pause_secs),
-            tts_engine="mlx" if (use_mlx and not use_kokoro_ja) else "kokoro",
+            tts_engine="bark" if use_bark else ("mlx" if (use_mlx and not use_kokoro_ja) else "kokoro"),
             mlx_voice_choice=mlx_voice_choice if (use_mlx and not use_preset_voice and not use_kokoro_ja) else None,
             mlx_preset_voice=mlx_preset_voice if use_preset_voice else None,
             mlx_model_id=mlx_model_choice if (use_mlx and not use_kokoro_ja) else None,
             mlx_language="ja" if use_mlx else None,
+            bark_voice=bark_id if use_bark else None,
             lipsync_engine={"MuseTalk 1.5": "musetalk", "SadTalker 256px": "sadtalker", "SadTalker HD": "sadtalker_hd"}.get(lipsync_engine, "musetalk"),
             enhance_face=_presenter_enhance_enabled(enhance_face),
             mt_batch_size=int(mt_batch_size),
@@ -2525,28 +2628,51 @@ with gr.Blocks(title="Avatar Studio") as demo:
         # TAB 1: Text to Audio
         # ══════════════════════════════════════════════════════════════════════
         with gr.TabItem("Text to Audio", id="tab-tts"):
-            gr.HTML("<div class='section-title'><span class='material-symbols-outlined'>record_voice_over</span> Text-to-Speech with Kokoro</div>")
-            gr.Markdown("Convert text to natural speech using **Kokoro TTS** — runs locally, no API key needed. Download the generated audio file when done.")
+            gr.HTML("<div class='section-title'><span class='material-symbols-outlined'>record_voice_over</span> Text-to-Speech</div>")
+            gr.Markdown("Convert text to natural speech using **Kokoro TTS** or **Bark (suno/bark)** — runs fully locally, no API key needed.")
 
             with gr.Row(equal_height=False):
                 with gr.Column(scale=3):
-                    tts_script = gr.Textbox(label="Script", placeholder="Type or paste the text to convert to speech…", lines=6)
+                    tts_script = gr.Textbox(label="Script", placeholder="Type or paste the text to convert to speech… Bark supports [laughs], [sighs], etc.", lines=6)
                     tts_char_counter = gr.Markdown("0 characters · Kokoro TTS (local, free)")
-                    with gr.Row():
+                    tts_engine_toggle = gr.Radio(
+                        label="TTS Engine",
+                        choices=["Kokoro TTS", "Bark — suno/bark"],
+                        value="Kokoro TTS",
+                        elem_classes=["toggle-radio"],
+                    )
+                    with gr.Row(visible=True) as tts_kokoro_row:
                         tts_voice = gr.Dropdown(
-                            label="Voice", choices=list(VOICE_CHOICES.keys()),
+                            label="Voice (Kokoro)", choices=list(VOICE_CHOICES.keys()),
                             value="Heart — Warm Female (default)", scale=2,
                         )
                         tts_voice_preview = gr.Audio(label="Voice Preview", type="filepath", interactive=False, scale=2)
+                    with gr.Row(visible=False) as tts_bark_row:
+                        tts_bark_voice = gr.Dropdown(
+                            label="Voice Preset (Bark)",
+                            choices=list(BARK_VOICE_CHOICES.keys()),
+                            value="Speaker 6 — English (default)",
+                            scale=3,
+                        )
                     tts_generate_btn = gr.Button("Generate Audio", variant="primary", elem_classes=["g-btn-primary"])
 
                 with gr.Column(scale=2):
                     tts_output = gr.Audio(label="Generated Audio (click ⬇ to download)", type="filepath", interactive=False)
                     tts_status = gr.Markdown("")
 
-            tts_script.change(fn=update_char_count, inputs=[tts_script], outputs=[tts_char_counter])
+            def _tts_toggle_engine(engine):
+                use_bark = "Bark" in (engine or "")
+                return gr.update(visible=not use_bark), gr.update(visible=use_bark)
+
+            tts_engine_toggle.change(fn=_tts_toggle_engine, inputs=[tts_engine_toggle], outputs=[tts_kokoro_row, tts_bark_row])
+            tts_script.change(fn=update_char_count, inputs=[tts_script, tts_engine_toggle], outputs=[tts_char_counter])
+            tts_engine_toggle.change(fn=update_char_count, inputs=[tts_script, tts_engine_toggle], outputs=[tts_char_counter])
             tts_voice.change(fn=generate_voice_preview, inputs=[tts_voice], outputs=[tts_voice_preview])
-            tts_generate_btn.click(fn=generate_audio_only, inputs=[tts_script, tts_voice], outputs=[tts_output, tts_status])
+            tts_generate_btn.click(
+                fn=generate_audio_only,
+                inputs=[tts_script, tts_voice, tts_engine_toggle, tts_bark_voice],
+                outputs=[tts_output, tts_status],
+            )
 
         # ══════════════════════════════════════════════════════════════════════
         # TAB 2: Voice Studio
@@ -2825,9 +2951,22 @@ with gr.Blocks(title="Avatar Studio") as demo:
                     t2l_estimate = gr.HTML(value="")
 
                     gr.HTML("<div class='section-title'><span class='material-symbols-outlined'>record_voice_over</span> Voice</div>")
-                    with gr.Row():
-                        t2l_voice = gr.Dropdown(label="Voice", choices=list(VOICE_CHOICES.keys()), value="Heart — Warm Female (default)", scale=2, show_label=False)
+                    t2l_tts_engine = gr.Radio(
+                        label="TTS Engine",
+                        choices=["Kokoro TTS", "Bark — suno/bark"],
+                        value="Kokoro TTS",
+                        elem_classes=["toggle-radio"],
+                    )
+                    with gr.Row(visible=True) as t2l_kokoro_voice_row:
+                        t2l_voice = gr.Dropdown(label="Voice (Kokoro)", choices=list(VOICE_CHOICES.keys()), value="Heart — Warm Female (default)", scale=2, show_label=False)
                         t2l_voice_preview = gr.Audio(label="Preview", type="filepath", interactive=False, scale=2)
+                    with gr.Row(visible=False) as t2l_bark_voice_row:
+                        t2l_bark_voice = gr.Dropdown(
+                            label="Voice Preset (Bark)",
+                            choices=list(BARK_VOICE_CHOICES.keys()),
+                            value="Speaker 6 — English (default)",
+                            scale=3,
+                        )
 
                     gr.HTML("<div class='section-title'><span class='material-symbols-outlined'>tune</span> Video Settings</div>")
                     with gr.Row():
@@ -2874,7 +3013,12 @@ with gr.Blocks(title="Avatar Studio") as demo:
 
             t2l_avatar_upload.change(fn=save_uploaded_avatar, inputs=[t2l_avatar_upload], outputs=[t2l_avatar_preview, t2l_avatar_status, t2l_avatar_gallery])
             t2l_avatar_gallery.select(fn=select_avatar_from_gallery, outputs=[t2l_avatar_preview, t2l_avatar_status])
-            t2l_script.change(fn=update_char_count, inputs=[t2l_script], outputs=[t2l_char_counter])
+            t2l_script.change(fn=update_char_count, inputs=[t2l_script, t2l_tts_engine], outputs=[t2l_char_counter])
+            t2l_tts_engine.change(fn=update_char_count, inputs=[t2l_script, t2l_tts_engine], outputs=[t2l_char_counter])
+            def _t2l_toggle_tts(engine):
+                use_bark = "Bark" in (engine or "")
+                return gr.update(visible=not use_bark), gr.update(visible=use_bark)
+            t2l_tts_engine.change(fn=_t2l_toggle_tts, inputs=[t2l_tts_engine], outputs=[t2l_kokoro_voice_row, t2l_bark_voice_row])
             t2l_script.change(fn=estimate_generation_time, inputs=[t2l_script, t2l_audio_upload, t2l_engine], outputs=[t2l_estimate])
             t2l_audio_upload.change(fn=estimate_generation_time, inputs=[t2l_script, t2l_audio_upload, t2l_engine], outputs=[t2l_estimate])
             t2l_engine.change(fn=estimate_generation_time, inputs=[t2l_script, t2l_audio_upload, t2l_engine], outputs=[t2l_estimate])
@@ -2888,6 +3032,7 @@ with gr.Blocks(title="Avatar Studio") as demo:
                     t2l_captions, t2l_preview_mode, t2l_caption_fontsize, t2l_caption_position,
                     t2l_mt_batch, t2l_mt_bbox,
                     t2l_st_expr, t2l_st_pose, t2l_st_still, t2l_st_preprocess,
+                    t2l_tts_engine, t2l_bark_voice,
                 ],
                 outputs=[t2l_output, t2l_log, t2l_metadata, t2l_history],
             )
@@ -3280,7 +3425,7 @@ with gr.Blocks(title="Avatar Studio") as demo:
             narr_mode.change(
                 fn=_toggle_narration_tts_controls,
                 inputs=[narr_mode],
-                outputs=[narr_kokoro_row, narr_mlx_col, narr_engine_help],
+                outputs=[narr_kokoro_row, narr_mlx_col, narr_bark_row, narr_engine_help],
             )
             narr_ja_source.change(
                 fn=_toggle_narration_japanese_source,
@@ -3294,7 +3439,7 @@ with gr.Blocks(title="Avatar Studio") as demo:
             )
             narr_generate_btn.click(
                 fn=generate_narration_video,
-                inputs=[narr_pdf, narr_json, narr_mode, narr_voice, narr_ja_source, narr_mlx_voice, narr_mlx_preset, narr_kokoro_ja_voice, narr_mlx_model, narr_pause],
+                inputs=[narr_pdf, narr_json, narr_mode, narr_voice, narr_ja_source, narr_mlx_voice, narr_mlx_preset, narr_kokoro_ja_voice, narr_mlx_model, narr_bark_voice, narr_pause],
                 outputs=[narr_output, narr_log, narr_report],
             )
             narr_cancel_btn.click(fn=cancel_generation, outputs=[narr_log])
@@ -3452,6 +3597,14 @@ with gr.Blocks(title="Avatar Studio") as demo:
                     value="Heart — Warm Female (default)",
                     scale=2,
                 )
+            with gr.Row(visible=False) as presenter_bark_row:
+                presenter_bark_voice = gr.Dropdown(
+                    label="Voice Preset (Bark)",
+                    choices=list(BARK_VOICE_CHOICES.keys()),
+                    value="Speaker 6 — English (default)",
+                    scale=3,
+                    info="Supports [laughs], [sighs], [music] etc. in your text.",
+                )
             with gr.Column(visible=False) as presenter_mlx_col:
                 presenter_ja_source = gr.Radio(
                     label="Japanese Voice Source",
@@ -3606,7 +3759,7 @@ with gr.Blocks(title="Avatar Studio") as demo:
             presenter_mode.change(
                 fn=_toggle_narration_tts_controls,
                 inputs=[presenter_mode],
-                outputs=[presenter_kokoro_row, presenter_mlx_col, presenter_engine_help],
+                outputs=[presenter_kokoro_row, presenter_mlx_col, presenter_bark_row, presenter_engine_help],
             )
             presenter_ja_source.change(
                 fn=_toggle_narration_japanese_source,
@@ -3647,6 +3800,7 @@ with gr.Blocks(title="Avatar Studio") as demo:
                     presenter_mlx_preset,
                     presenter_kokoro_ja_voice,
                     presenter_mlx_model,
+                    presenter_bark_voice,
                     presenter_pause,
                     presenter_lipsync_engine,
                     presenter_enhance,

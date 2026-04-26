@@ -53,6 +53,7 @@ def compose_narrated_video(
     mlx_preset_voice: str | None = None,
     mlx_model_id: str | None = None,
     mlx_language: str | None = None,
+    bark_voice: str | None = None,
 ) -> Generator[tuple[str, str | None], None, None]:
     """Compose a narrated presentation video.
 
@@ -88,9 +89,13 @@ def compose_narrated_video(
         tts_engine = (tts_engine or "kokoro").strip().lower()
         vg = None
         studio = None
+        bark_gen = None
         if tts_engine == "mlx":
             from avatarpipeline.engines.tts.mlx import MlxVoiceStudio
             studio = MlxVoiceStudio()
+        elif tts_engine == "bark":
+            from avatarpipeline.engines.tts.bark import BarkVoiceGenerator
+            bark_gen = BarkVoiceGenerator()
         else:
             from avatarpipeline.engines.tts.kokoro import VoiceGenerator
             vg = VoiceGenerator()
@@ -134,6 +139,14 @@ def compose_narrated_video(
                         )
                     _normalize_audio(generated, out_wav)
                     Path(generated).unlink(missing_ok=True)
+                elif tts_engine == "bark":
+                    if bark_gen is None:
+                        raise RuntimeError("Bark voice generator is not available.")
+                    bark_gen.generate(
+                        narration,
+                        voice=bark_voice or "en_speaker_6",
+                        out_path=out_wav,
+                    )
                 else:
                     if vg is None:
                         raise RuntimeError("Kokoro voice generator is not available.")

@@ -286,6 +286,7 @@ def compose_slide_presenter_video(
     mlx_preset_voice: str | None = None,
     mlx_model_id: str | None = None,
     mlx_language: str | None = None,
+    bark_voice: str | None = None,
     lipsync_engine: str = "musetalk",
     enhance_face: bool = False,
     mt_batch_size: int = 8,
@@ -410,6 +411,7 @@ def compose_slide_presenter_video(
             "mlx_preset_voice": mlx_preset_voice,
             "mlx_model_id": mlx_model_id,
             "mlx_language": mlx_language,
+            "bark_voice": bark_voice,
         }
         audio_hash = _sha1_text(json.dumps(audio_key, sort_keys=True))[:12]
         audio_path = asset_dirs["audio"] / f"slide_{slide_num:03d}_{audio_hash}.wav"
@@ -443,6 +445,15 @@ def compose_slide_presenter_video(
                         )
                     _normalize_audio(generated, audio_path)
                     Path(generated).unlink(missing_ok=True)
+                elif (tts_engine or "kokoro").strip().lower() == "bark":
+                    from avatarpipeline.engines.tts.bark import BarkVoiceGenerator
+                    if voice_gen is None:
+                        voice_gen = BarkVoiceGenerator()
+                    voice_gen.generate(
+                        narration,
+                        voice=bark_voice or "en_speaker_6",
+                        out_path=str(audio_path),
+                    )
                 else:
                     if voice_gen is None:
                         from avatarpipeline.engines.tts.kokoro import VoiceGenerator

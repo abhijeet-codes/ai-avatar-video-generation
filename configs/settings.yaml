@@ -33,9 +33,21 @@ musetalk:
   default_bbox_shift: 0
   default_batch_size: 8
 
-# Local TTS settings (Kokoro — hexgrad/Kokoro-82M)
+# Local TTS settings
+# engine options:
+#   kokoro  — hexgrad/Kokoro-82M, fast, multilingual, runs on Apple Silicon MPS
+#   bark    — suno/bark (full, ~5 GB) or suno/bark-small (~2 GB)
+#             Natural, expressive voice with non-verbal cues support
+#             Recommended model for this system: suno/bark (M4 Pro 24 GB)
+#   mlx     — Qwen3-TTS via mlx-audio, Apple Silicon native
 tts:
   engine: "kokoro"
-  default_voice: "af_heart"   # American female, high quality
+  default_voice: "af_heart"   # American female, high quality (Kokoro)
   speed: 1.0
   lang_code: "a"              # 'a'=American English, 'b'=British English
+
+# Bark TTS settings (used when tts.engine = "bark")
+bark:
+  model_id: "suno/bark"       # full model — best quality for M4 Pro 24 GB
+  default_voice: "en_speaker_6"  # clear neutral English male
+  # Swap to "suno/bark-small" to reduce memory usage to ~4 GB
