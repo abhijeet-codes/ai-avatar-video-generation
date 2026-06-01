@@ -2585,6 +2585,910 @@ footer { display: none !important; }
     border-right-color: transparent !important;
 }
 .toggle-radio .wrap > label input[type="radio"] { display: none !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Google Workspace-inspired application shell
+   ═══════════════════════════════════════════════════════════════════════════ */
+body {
+    background-color: #e9eef5 !important;
+    background-image:
+        radial-gradient(circle, rgba(94, 114, 142, 0.28) 1px, transparent 1px),
+        linear-gradient(180deg, #f2f6fb 0%, #e7edf5 100%) !important;
+    background-size: 24px 24px, 100% 100% !important;
+    color: #1f2937 !important;
+}
+
+.gradio-container {
+    max-width: none !important;
+    width: 100% !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 94px 34px 46px 316px !important;
+    font-family: 'Google Sans Text', 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    background: linear-gradient(180deg, rgba(244, 248, 252, 0.92), rgba(234, 240, 247, 0.96)) !important;
+}
+
+.app-header {
+    position: fixed;
+    top: 0;
+    left: 280px;
+    right: 0;
+    height: 72px;
+    z-index: 50;
+    margin: 0 !important;
+    padding: 0 30px !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid rgba(190, 203, 219, 0.72) !important;
+    background: rgba(248, 251, 255, 0.88) !important;
+    box-shadow: 0 10px 34px rgba(31, 41, 55, 0.08) !important;
+    backdrop-filter: blur(22px);
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 18px !important;
+}
+
+.app-bar-title,
+.app-actions,
+.project-pill,
+.app-status,
+.app-icon-button {
+    display: inline-flex;
+    align-items: center;
+}
+
+.app-bar-title {
+    gap: 12px;
+    min-width: 0;
+}
+
+.app-bar-title .material-symbols-outlined {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #0b57d0;
+    background: #e8f0fe;
+    font-size: 22px;
+    font-variation-settings: 'FILL' 1;
+}
+
+.app-eyebrow {
+    font-family: 'Google Sans', sans-serif;
+    color: #5f6f86;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.app-header h1 {
+    font-family: 'Google Sans', sans-serif !important;
+    margin: 3px 0 0 !important;
+    color: #111827 !important;
+    font-size: 1.18rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+    line-height: 1.2 !important;
+}
+
+.app-actions {
+    gap: 12px;
+    margin-left: auto;
+}
+
+.project-pill {
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 13px;
+    border: 1px solid #d4dde9;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.74);
+    box-shadow: 0 6px 18px rgba(31, 41, 55, 0.05);
+    color: #1f2937;
+    font-family: 'Google Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.project-pill .material-symbols-outlined {
+    color: #5f6f86;
+    font-size: 19px;
+}
+
+.app-status {
+    gap: 8px;
+    height: 40px;
+    padding: 0 12px;
+    border-radius: 999px;
+    color: #137333;
+    background: #e6f4ea;
+    font-family: 'Google Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.app-status::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #34a853;
+    box-shadow: 0 0 0 5px rgba(52, 168, 83, 0.14);
+}
+
+.app-icon-button {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #d7e0ec;
+    border-radius: 999px;
+    justify-content: center;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.76);
+    color: #475569;
+    box-shadow: 0 6px 18px rgba(31, 41, 55, 0.05);
+}
+
+.app-icon-button .material-symbols-outlined {
+    font-size: 21px;
+}
+
+.tabs > .tab-wrapper {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    z-index: 60 !important;
+    width: 280px !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    padding: 18px 12px !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: 18px 0 44px rgba(15, 23, 42, 0.16) !important;
+    background:
+        linear-gradient(180deg, rgba(33, 68, 116, 0.96), rgba(20, 55, 101, 0.98)),
+        #173b69 !important;
+    backdrop-filter: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    overflow-y: auto !important;
+}
+
+.tabs > .tab-wrapper::before {
+    content: "Avatar Studio";
+    display: flex;
+    align-items: center;
+    min-height: 66px;
+    margin: 0 4px 18px;
+    padding: 0 14px 0 62px;
+    border-radius: 18px;
+    color: #f8fbff;
+    font-family: 'Google Sans', sans-serif;
+    font-size: 1.06rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    background-color: rgba(255, 255, 255, 0.08);
+    background-repeat: no-repeat;
+    background-position: 14px center;
+    background-size: 40px 40px;
+}
+
+.tabs > .tab-wrapper::after {
+    content: "settings  Settings";
+    margin: auto 4px 4px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    color: rgba(231, 239, 250, 0.84);
+    font-family: 'Material Symbols Outlined', 'Google Sans', sans-serif;
+    font-size: 0.94rem;
+    letter-spacing: 0.01em;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.tabs > .tab-wrapper .tab-container {
+    width: 100% !important;
+    border: 0 !important;
+    background: transparent !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.tabs > .tab-wrapper .tab-container.visually-hidden {
+    display: none !important;
+}
+
+.tabs > .tab-wrapper .overflow-menu {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.tabs > .tab-wrapper .overflow-menu > button {
+    display: none !important;
+}
+
+.tabs > .tab-wrapper .overflow-dropdown,
+.tabs > .tab-wrapper .overflow-dropdown.hide {
+    position: static !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+}
+
+.tabs > .tab-wrapper button {
+    position: relative !important;
+    width: 100% !important;
+    min-height: 52px !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    padding: 0 16px !important;
+    border: 1px solid transparent !important;
+    border-radius: 14px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: rgba(232, 240, 254, 0.78) !important;
+    font-family: 'Google Sans', sans-serif !important;
+    font-size: 0.96rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+    text-align: left !important;
+    transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease !important;
+}
+
+.tabs > .tab-wrapper button::before {
+    content: "apps";
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 28px;
+    color: rgba(232, 240, 254, 0.78);
+    font-family: 'Material Symbols Outlined';
+    font-size: 22px;
+    font-weight: 400;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.tabs > .tab-wrapper button[data-tab-id="tab-tts"]::before { content: "text_fields"; }
+.tabs > .tab-wrapper button[data-tab-id="tab-voice-studio"]::before { content: "graphic_eq"; }
+.tabs > .tab-wrapper button[data-tab-id="tab-a2l"]::before { content: "spatial_audio_off"; }
+.tabs > .tab-wrapper button[data-tab-id="tab-t2l"]::before { content: "movie_edit"; }
+.tabs > .tab-wrapper button[data-tab-id="tab-podcast"]::before { content: "podcasts"; }
+.tabs > .tab-wrapper button[data-tab-id="tab-narration"]::before { content: "slideshow"; }
+.tabs > .tab-wrapper button[data-tab-id="tab-slide-presenter"]::before { content: "present_to_all"; }
+.tabs > .tab-wrapper .overflow-dropdown button:nth-of-type(1)::before { content: "spatial_audio_off"; }
+.tabs > .tab-wrapper .overflow-dropdown button:nth-of-type(2)::before { content: "movie_edit"; }
+.tabs > .tab-wrapper .overflow-dropdown button:nth-of-type(3)::before { content: "podcasts"; }
+.tabs > .tab-wrapper .overflow-dropdown button:nth-of-type(4)::before { content: "slideshow"; }
+.tabs > .tab-wrapper .overflow-dropdown button:nth-of-type(5)::before { content: "present_to_all"; }
+
+.tabs > .tab-wrapper button:hover {
+    background: rgba(255, 255, 255, 0.10) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+.tabs > .tab-wrapper button:hover::before {
+    color: #ffffff;
+}
+
+.tabs > .tab-wrapper button.selected,
+.tabs > .tab-wrapper button[aria-selected="true"] {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    color: #ffffff !important;
+    box-shadow: inset 3px 0 0 #8ab4f8 !important;
+}
+
+.tabs > .tab-wrapper button.selected::before,
+.tabs > .tab-wrapper button[aria-selected="true"]::before {
+    color: #8ab4f8;
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+.tabitem {
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.section-title {
+    min-height: 28px;
+    margin: 0 0 14px 0 !important;
+    padding: 0 0 10px 0 !important;
+    border-bottom: 1px solid #e3e9f2 !important;
+    color: #4b5c73 !important;
+    font-size: 0.73rem !important;
+    letter-spacing: 0.07em !important;
+}
+
+.section-title .material-symbols-outlined {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    color: #0b57d0 !important;
+    background: #e8f0fe;
+    font-size: 17px !important;
+}
+
+.gradio-container .gr-form,
+.gradio-container .form,
+.gradio-container .gr-box,
+.gradio-container .gr-group,
+.gradio-container .block.gradio-row > div,
+.gradio-container .block.gradio-column > div,
+details {
+    border: 1px solid rgba(208, 218, 231, 0.88) !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+    box-shadow: 0 12px 30px rgba(31, 41, 55, 0.08) !important;
+}
+
+.gradio-container .gr-group,
+.gradio-container .gr-box,
+.gradio-container .form,
+details {
+    padding: 18px !important;
+}
+
+.gradio-container .gr-row,
+.gradio-container .gr-column {
+    gap: 20px !important;
+}
+
+.gradio-container label,
+.gradio-container .label-wrap {
+    color: #4b5c73 !important;
+    font-family: 'Google Sans', sans-serif !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+}
+
+.gradio-container textarea,
+.gradio-container input,
+.gradio-container select {
+    border: 1px solid #cfd8e5 !important;
+    border-radius: 12px !important;
+    background: #f8fbff !important;
+    color: #111827 !important;
+    box-shadow: none !important;
+}
+
+.gradio-container textarea:focus,
+.gradio-container input:focus,
+.gradio-container select:focus {
+    border-color: #8ab4f8 !important;
+    box-shadow: 0 0 0 4px rgba(138, 180, 248, 0.22) !important;
+}
+
+.g-btn-primary {
+    min-height: 44px !important;
+    border-radius: 999px !important;
+    background: #0b57d0 !important;
+    box-shadow: 0 10px 22px rgba(11, 87, 208, 0.22) !important;
+}
+
+.g-btn-primary:hover {
+    background: #0842a0 !important;
+    box-shadow: 0 14px 28px rgba(11, 87, 208, 0.25) !important;
+}
+
+.g-btn-danger {
+    min-height: 44px !important;
+    border-radius: 999px !important;
+}
+
+.output-video,
+.avatar-display img,
+video {
+    border-radius: 16px !important;
+}
+
+.progress-panel {
+    border: 1px solid rgba(208, 218, 231, 0.9) !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 12px 30px rgba(31, 41, 55, 0.08) !important;
+}
+
+.progress-header {
+    color: #111827 !important;
+    font-size: 0.92rem !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+}
+
+.progress-header .material-symbols-outlined {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    color: #0b57d0 !important;
+    background: #e8f0fe;
+}
+
+.progress-track {
+    height: 8px !important;
+    border-radius: 999px !important;
+    background: #d8e1ee !important;
+}
+
+.progress-fill {
+    border-radius: 999px !important;
+    background: linear-gradient(90deg, #174ea6, #0b57d0, #34a853) !important;
+}
+
+.meta-grid {
+    grid-template-columns: 1fr !important;
+}
+
+.meta-item,
+.estimate-card,
+.model-card {
+    border-radius: 14px !important;
+    box-shadow: none !important;
+}
+
+.toggle-radio .wrap {
+    border-radius: 12px !important;
+    background: #edf3fb !important;
+}
+
+.toggle-radio .wrap > label:has(input:checked) {
+    background: #0b57d0 !important;
+}
+
+@media (max-width: 1100px) {
+    .gradio-container {
+        padding-left: 292px !important;
+        padding-right: 22px !important;
+    }
+
+    .tabs > .tab-wrapper {
+        width: 256px !important;
+    }
+
+    .app-header {
+        left: 256px;
+    }
+}
+
+@media (max-width: 820px) {
+    .gradio-container {
+        padding: 146px 14px 32px !important;
+    }
+
+    .app-header {
+        left: 0;
+        height: 70px;
+        padding: 0 14px !important;
+    }
+
+    .app-eyebrow,
+    .app-status,
+    .project-pill .material-symbols-outlined:first-child {
+        display: none;
+    }
+
+    .project-pill {
+        max-width: 46vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .tabs > .tab-wrapper {
+        top: 70px !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: auto !important;
+        width: auto !important;
+        height: 64px !important;
+        padding: 8px 10px !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        box-shadow: 0 12px 28px rgba(31, 41, 55, 0.12) !important;
+    }
+
+    .tabs > .tab-wrapper::before,
+    .tabs > .tab-wrapper::after {
+        display: none;
+    }
+
+    .tabs > .tab-wrapper .tab-container,
+    .tabs > .tab-wrapper .overflow-menu,
+    .tabs > .tab-wrapper .overflow-dropdown,
+    .tabs > .tab-wrapper .overflow-dropdown.hide {
+        width: auto !important;
+        flex-direction: row !important;
+        gap: 8px !important;
+    }
+
+    .tabs > .tab-wrapper button {
+        width: auto !important;
+        min-width: max-content !important;
+        min-height: 46px !important;
+        padding: 0 14px !important;
+    }
+}
+"""
+
+if _logo_b64:
+    CSS += f"""
+.tabs > .tab-wrapper::before {{
+    background-image: url("data:image/png;base64,{_logo_b64}");
+}}
+"""
+
+CSS += """
+.app-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 70;
+    width: 280px;
+    padding: 18px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background:
+        linear-gradient(180deg, rgba(33, 68, 116, 0.96), rgba(20, 55, 101, 0.98)),
+        #173b69;
+    box-shadow: 18px 0 44px rgba(15, 23, 42, 0.16);
+}
+
+.sidebar-brand {
+    min-height: 66px;
+    padding: 0 16px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #f8fbff !important;
+    background: rgba(255, 255, 255, 0.08);
+    font-family: 'Google Sans', sans-serif;
+    font-size: 1.06rem;
+    font-weight: 700;
+}
+
+.sidebar-brand span {
+    color: #f8fbff !important;
+}
+
+.sidebar-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: rgba(232, 240, 254, 0.16);
+}
+
+.sidebar-logo img {
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar-nav-button {
+    width: 100%;
+    min-height: 52px;
+    padding: 0 16px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    background: transparent !important;
+    color: rgba(232, 240, 254, 0.78) !important;
+    font-family: 'Google Sans', sans-serif;
+    font-size: 0.96rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+.sidebar-nav-button span {
+    color: inherit !important;
+}
+
+.sidebar-nav-button .material-symbols-outlined {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 28px;
+    font-size: 22px;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.sidebar-nav-button:hover {
+    background: rgba(255, 255, 255, 0.10) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+.sidebar-nav-button.active {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    color: #ffffff !important;
+    box-shadow: inset 3px 0 0 #8ab4f8 !important;
+}
+
+.sidebar-nav-button.active .material-symbols-outlined {
+    color: #8ab4f8 !important;
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+.sidebar-settings {
+    margin-top: auto;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.tabs > .tab-wrapper {
+    position: fixed !important;
+    left: -10000px !important;
+    top: 0 !important;
+    width: 2000px !important;
+    height: 1px !important;
+    display: block !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: auto !important;
+    clip-path: inset(0 calc(100% - 280px) 0 0) !important;
+    box-shadow: none !important;
+}
+
+.tabs > .tab-wrapper .tab-container {
+    flex-direction: row !important;
+}
+
+.tabs > .tab-wrapper .overflow-menu {
+    display: none !important;
+}
+
+@media (max-width: 820px) {
+    .app-sidebar {
+        top: 70px;
+        right: 0;
+        bottom: auto;
+        width: auto;
+        height: 64px;
+        padding: 8px 10px;
+        flex-direction: row;
+        align-items: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+        box-shadow: 0 12px 28px rgba(31, 41, 55, 0.12);
+    }
+
+    .sidebar-brand,
+    .sidebar-settings {
+        display: none;
+    }
+
+    .sidebar-nav {
+        flex-direction: row;
+        gap: 8px;
+    }
+
+    .sidebar-nav-button {
+        width: auto;
+        min-width: max-content;
+        min-height: 46px;
+        padding: 0 14px;
+    }
+}
+"""
+
+_sidebar_logo = (
+    f'<img src="data:image/png;base64,{_logo_b64}" alt="" />'
+    if _logo_b64
+    else '<span class="material-symbols-outlined">auto_awesome</span>'
+)
+
+
+def _sidebar_button(label: str, icon: str, tab_id: str, active: bool = False) -> str:
+    cls = "sidebar-nav-button active" if active else "sidebar-nav-button"
+    return (
+        f'<button class="{cls}" type="button" '
+        "onclick=\"document.querySelectorAll('.sidebar-nav-button').forEach(b => b.classList.remove('active'));"
+        "this.classList.add('active');"
+        f"document.querySelector('[data-tab-id={tab_id}]')?.click();\">"
+        f'<span class="material-symbols-outlined">{icon}</span>'
+        f"<span>{label}</span>"
+        "</button>"
+    )
+
+CSS += """
+/* Use native Gradio tabs as the functional sidebar controls. */
+.app-sidebar {
+    pointer-events: none !important;
+}
+
+.app-sidebar .sidebar-nav {
+    display: none !important;
+}
+
+.tabs > .tab-wrapper {
+    position: fixed !important;
+    inset: 0 auto 0 0 !important;
+    z-index: 80 !important;
+    width: 2000px !important;
+    height: 100vh !important;
+    display: block !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    pointer-events: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.tabs > .tab-wrapper::before,
+.tabs > .tab-wrapper::after {
+    display: none !important;
+}
+
+.tabs > .tab-wrapper .tab-container.visually-hidden {
+    display: none !important;
+}
+
+.tabs > .tab-wrapper .tab-container[role="tablist"] {
+    position: absolute !important;
+    top: 102px !important;
+    left: 12px !important;
+    width: 256px !important;
+    min-width: 256px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    pointer-events: auto !important;
+}
+
+.tabs > .tab-wrapper .overflow-menu {
+    display: none !important;
+}
+
+.tabs > .tab-wrapper button[role="tab"] {
+    width: 100% !important;
+    min-height: 52px !important;
+    padding: 0 16px !important;
+    border: 1px solid transparent !important;
+    border-radius: 14px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    background: transparent !important;
+    color: rgba(232, 240, 254, 0.78) !important;
+    box-shadow: none !important;
+    font-family: 'Google Sans', sans-serif !important;
+    font-size: 0.96rem !important;
+    font-weight: 500 !important;
+    text-align: left !important;
+}
+
+.tabs > .tab-wrapper button[role="tab"]:hover {
+    background: rgba(255, 255, 255, 0.10) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+.tabs > .tab-wrapper button[role="tab"][aria-selected="true"],
+.tabs > .tab-wrapper button[role="tab"].selected {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    color: #ffffff !important;
+    box-shadow: inset 3px 0 0 #8ab4f8 !important;
+}
+
+.tabs > .tab-wrapper button[role="tab"]::before {
+    content: "apps";
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 28px;
+    color: inherit;
+    font-family: 'Material Symbols Outlined';
+    font-size: 22px;
+    font-weight: 400;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.tabs > .tab-wrapper button[role="tab"][aria-selected="true"]::before,
+.tabs > .tab-wrapper button[role="tab"].selected::before {
+    color: #8ab4f8 !important;
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+@media (max-width: 820px) {
+    .app-sidebar {
+        display: none !important;
+    }
+
+    .tabs > .tab-wrapper {
+        top: 70px !important;
+        right: 0 !important;
+        bottom: auto !important;
+        width: 100vw !important;
+        height: 64px !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        padding: 8px 10px !important;
+        background:
+            linear-gradient(180deg, rgba(33, 68, 116, 0.96), rgba(20, 55, 101, 0.98)),
+            #173b69 !important;
+        box-shadow: 0 12px 28px rgba(31, 41, 55, 0.12) !important;
+    }
+
+    .tabs > .tab-wrapper .tab-container[role="tablist"] {
+        position: static !important;
+        width: max-content !important;
+        min-width: max-content !important;
+        flex-direction: row !important;
+    }
+
+    .tabs > .tab-wrapper button[role="tab"] {
+        width: auto !important;
+        min-width: max-content !important;
+        min-height: 46px !important;
+        padding: 0 14px !important;
+    }
+}
 """
 
 
@@ -2604,20 +3508,48 @@ THEME = gr.themes.Default(
 with gr.Blocks(title="Avatar Studio") as demo:
 
     # ── Header ───────────────────────────────────────────────────────────────
-    gr.HTML("""
+    gr.HTML(f"""
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-        <div class="app-header">
-            <div class="logo-circle">
-                <span class="material-symbols-outlined">smart_toy</span>
+        <div class="app-sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-logo">{_sidebar_logo}</div>
+                <span>Avatar Studio</span>
             </div>
-            <div>
-                <h1>Avatar Studio</h1>
-                <p class="tagline">AI-powered video, image &amp; audio generation — fully local</p>
-                <div class="chip-row">
-                    <span class="chip chip-online"><span class="material-symbols-outlined" style="font-size:14px">check_circle</span> Ready</span>
-                    <span class="chip chip-local"><span class="material-symbols-outlined" style="font-size:14px">lock</span> Offline</span>
-                    <span class="chip chip-hw"><span class="material-symbols-outlined" style="font-size:14px">memory</span> Apple Silicon · MLX</span>
+            <div class="sidebar-nav">
+                {_sidebar_button("TTS", "text_fields", "tab-tts", active=True)}
+                {_sidebar_button("Voice Studio", "graphic_eq", "tab-voice-studio")}
+                {_sidebar_button("Audio Lipsync", "spatial_audio_off", "tab-a2l")}
+                {_sidebar_button("Text Lipsync", "movie_edit", "tab-t2l")}
+                {_sidebar_button("Podcast", "podcasts", "tab-podcast")}
+                {_sidebar_button("Slide Narrator", "slideshow", "tab-narration")}
+                {_sidebar_button("Slide Presenter", "present_to_all", "tab-slide-presenter")}
+            </div>
+            <button class="sidebar-nav-button sidebar-settings" type="button">
+                <span class="material-symbols-outlined">settings</span>
+                <span>Settings</span>
+            </button>
+        </div>
+        <div class="app-header">
+            <div class="app-bar-title">
+                <span class="material-symbols-outlined">auto_awesome</span>
+                <div>
+                    <div class="app-eyebrow">Local AI Workspace</div>
+                    <h1>Avatar Studio</h1>
                 </div>
+            </div>
+            <div class="app-actions">
+                <div class="project-pill">
+                    <span class="material-symbols-outlined">folder_managed</span>
+                    <span>Project: Q3 Marketing Video</span>
+                    <span class="material-symbols-outlined">expand_more</span>
+                </div>
+                <div class="app-status">Ready</div>
+                <button class="app-icon-button" type="button" aria-label="Notifications">
+                    <span class="material-symbols-outlined">notifications</span>
+                </button>
+                <button class="app-icon-button" type="button" aria-label="Account">
+                    <span class="material-symbols-outlined">account_circle</span>
+                </button>
             </div>
         </div>
     """)
@@ -2627,7 +3559,7 @@ with gr.Blocks(title="Avatar Studio") as demo:
         # ══════════════════════════════════════════════════════════════════════
         # TAB 1: Text to Audio
         # ══════════════════════════════════════════════════════════════════════
-        with gr.TabItem("Text to Audio", id="tab-tts"):
+        with gr.TabItem("TTS", id="tab-tts"):
             gr.HTML("<div class='section-title'><span class='material-symbols-outlined'>record_voice_over</span> Text-to-Speech</div>")
             gr.Markdown("Convert text to natural speech using **Kokoro TTS** or **Bark (suno/bark)** — runs fully locally, no API key needed.")
 
@@ -2819,7 +3751,7 @@ with gr.Blocks(title="Avatar Studio") as demo:
         # ══════════════════════════════════════════════════════════════════════
         # TAB 3: Audio to Lipsync
         # ══════════════════════════════════════════════════════════════════════
-        with gr.TabItem("Audio to Lipsync", id="tab-a2l"):
+        with gr.TabItem("Audio Lipsync", id="tab-a2l"):
             gr.HTML("<div class='section-title'><span class='material-symbols-outlined'>lips</span> Audio → Lip-synced Video</div>")
             gr.Markdown("Upload audio and an avatar image to generate a **lip-synced talking-head video**. Skips TTS and now keeps the uploaded avatar's original framing instead of forcing it into a square preview.")
 
@@ -2926,7 +3858,7 @@ with gr.Blocks(title="Avatar Studio") as demo:
         # ══════════════════════════════════════════════════════════════════════
         # TAB 4: Text to Lipsync (Full Pipeline)
         # ══════════════════════════════════════════════════════════════════════
-        with gr.TabItem("Text to Lipsync", id="tab-t2l"):
+        with gr.TabItem("Text Lipsync", id="tab-t2l"):
             gr.HTML("<div class='section-title'><span class='material-symbols-outlined'>auto_awesome</span> Full Pipeline: Text → Video</div>")
             gr.Markdown("**End-to-end:** Text → Speech → Lip-sync → Enhancement → Composite → Captions → Final Video. Uploaded avatars keep their original aspect ratio so portrait art stays portrait.")
 
@@ -3042,7 +3974,7 @@ with gr.Blocks(title="Avatar Studio") as demo:
         # ══════════════════════════════════════════════════════════════════════
         # TAB 5: Podcast Studio
         # ══════════════════════════════════════════════════════════════════════
-        with gr.TabItem("Podcast Studio", id="tab-podcast"):
+        with gr.TabItem("Podcast", id="tab-podcast"):
             gr.HTML("<div class='section-title'><span class='material-symbols-outlined'>podcasts</span> Two-Speaker Podcast Generator</div>")
             gr.Markdown(
                 "Create a **two-speaker podcast video** with animated avatars. "
@@ -3334,6 +4266,14 @@ with gr.Blocks(title="Avatar Studio") as demo:
                     choices=list(VOICE_CHOICES.keys()),
                     value="Heart \u2014 Warm Female (default)",
                     scale=2,
+                )
+            with gr.Row(visible=False) as narr_bark_row:
+                narr_bark_voice = gr.Dropdown(
+                    label="Voice Preset (Bark)",
+                    choices=list(BARK_VOICE_CHOICES.keys()),
+                    value="Speaker 6 \u2014 English (default)",
+                    scale=3,
+                    info="Supports [laughs], [sighs], [music] etc. in your text.",
                 )
             with gr.Column(visible=False) as narr_mlx_col:
                 narr_ja_source = gr.Radio(

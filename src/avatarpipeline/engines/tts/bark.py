@@ -199,6 +199,64 @@ class BarkVoiceGenerator:
     # Public API  (satisfies TtsEngine protocol)
     # ------------------------------------------------------------------
 
+    # ------------------------------------------------------------------
+    # Chunking helpers (Bark caps output at ~13 s per inference call)
+    # ------------------------------------------------------------------
+
+    _MAX_CHUNK_CHARS: ClassVar[int] = 220  # ~13 s at average speaking rate
+
+    @staticmethod
+    def _split_sentences(text: str) -> list[str]:
+        """Split *text* into sentence-level chunks suitable for Bark.
+
+        Splits on ``.  !  ?`` followed by whitespace or end-of-string.
+        Chunks longer than ``_MAX_CHUNK_CHARS`` are further split at commas
+        or semicolons so no single chunk exceeds the limit.
+        """
+        import re
+
+        raw = re.split(r"(?<=[.!?])\s+", text.strip())
+        chunks: list[str] = []
+        for sentence in raw:
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+            if len(sentence) <= BarkVoiceGenerator._MAX_CHUNK_CHARS:
+                chunks.append(sentence)
+            else:
+                # Split long sentence at commas / semicolons
+                sub_parts = re.split(r"(?<=[,;])\s+", sentence)
+                current = ""
+                for part in sub_parts:
+                    if len(current) + len(part) + 1 <= BarkVoiceGenerator._MAX_CHUNK_CHARS:
+                        current = (current + " " + part).strip()
+                    else:
+                        if current:
+                            chunks.append(current)
+                        # Hard-split any part that is still too long
+                        while len(part) > BarkVoiceGenerator._MAX_CHUNK_CHARS:
+                            chunks.append(part[: BarkVoiceGenerator._MAX_CHUNK_CHARS])
+                            part = part[BarkVoiceGenerator._MAX_CHUNK_CHARS :]
+                        current = part
+                if current:
+                    chunks.append(current)
+        return chunks or [text]
+
+    def _generate_chunk(self, text: str, voice_preset: str) -> np.ndarray:
+        """Run a single Bark inference call and return a 1-D float32 array."""
+        import torch
+
+        inputs = self._processor(
+            text,
+            voice_preset=voice_preset,
+            return_tensors="pt",
+        ).to(self._get_device())
+
+        with torch.inference_mode():
+            audio_array = self._model.generate(**inputs)
+
+        return audio_array.cpu().numpy().squeeze()
+
     def generate(
         self,
         text: str,
@@ -207,11 +265,15 @@ class BarkVoiceGenerator:
     ) -> str:
         """Generate speech from *text* and save as a 16 kHz mono WAV.
 
+        Long text is automatically split into sentence-level chunks (Bark
+        caps output at ~13 s per inference call) and the chunks are
+        concatenated into a single WAV.
+
         Bark supports inline non-verbal cues in square brackets, e.g.:
             "Hello! [laughs] How are you today?"
 
         Args:
-            text:     The script to synthesise (max ~250 words per chunk).
+            text:     The script to synthesise (any length).
             voice:    Voice key from VOICES dict or a raw preset like
                       ``"v2/en_speaker_6"``.  Defaults to ``en_speaker_6``.
             out_path: Destination WAV path. Defaults to data/audio/output.wav.
@@ -230,21 +292,24 @@ class BarkVoiceGenerator:
             dest = ROOT / dest
         dest.parent.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"Bark TTS: {len(text)} chars, preset={voice_preset}")
+        chunks = self._split_sentences(text)
+        logger.info(
+            f"Bark TTS: {len(text)} chars split into {len(chunks)} chunk(s), "
+            f"preset={voice_preset}"
+        )
 
-        import torch
+        # Small silence (0.2 s) between sentences for natural pacing
+        silence = np.zeros(int(self.SAMPLE_RATE * 0.20), dtype=np.float32)
 
-        inputs = self._processor(
-            text,
-            voice_preset=voice_preset,
-            return_tensors="pt",
-        ).to(self._get_device())
+        audio_parts: list[np.ndarray] = []
+        for i, chunk in enumerate(chunks, 1):
+            logger.info(f"  Chunk {i}/{len(chunks)}: {len(chunk)} chars")
+            part = self._generate_chunk(chunk, voice_preset)
+            audio_parts.append(part.astype(np.float32))
+            if i < len(chunks):
+                audio_parts.append(silence)
 
-        with torch.inference_mode():
-            audio_array = self._model.generate(**inputs)
-
-        # Shape: (1, T) — move to CPU and squeeze to 1-D
-        audio_np: np.ndarray = audio_array.cpu().numpy().squeeze()
+        audio_np = np.concatenate(audio_parts) if audio_parts else np.zeros(1, dtype=np.float32)
 
         raw_path = dest.with_suffix(".24k.wav")
         sf.write(str(raw_path), audio_np, self.SAMPLE_RATE)
