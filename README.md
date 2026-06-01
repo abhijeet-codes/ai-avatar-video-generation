@@ -1,303 +1,171 @@
 # Avatar Studio
 
-A fully local, offline AI avatar video generation pipeline for Apple Silicon (M4 Pro / MPS).
-Drop in a portrait photo, type a script, and get back a lip-synced, face-enhanced, captioned MP4 — no API keys, no cloud, no per-minute charges.
+Avatar Studio is a local AI video workspace for Apple Silicon. It generates
+speech, lip-synced avatar videos, two-speaker podcast videos, narrated slide
+videos, and reusable slide presenter assets without a cloud API in the default
+workflow.
 
----
+## Documentation
 
-## How It Works
+| Document | Use it for |
+| --- | --- |
+| [doc/setup.md](doc/setup.md) | Installation, user manual, dashboard guide, folders, validation, and troubleshooting. |
+| [doc/pipeline.md](doc/pipeline.md) | Current pipeline architecture, app flows, engine map, artifacts, and config reference. |
 
-The pipeline runs 7 sequential steps, each implemented as a standalone class:
+## What It Builds
 
-```
-Text script
-    │
-    ▼  Step 1 — Voice (Kokoro TTS)
-Audio WAV (24 kHz)
-    │
-    ▼  Step 2 — Resample
-Audio WAV (16 kHz mono)
-    │
-    ▼  Step 3 — Lip-sync (MuseTalk 1.5 / SadTalker / SadTalker HD)
-Raw lip-synced MP4
-    │
-    ▼  Step 4 — Face Enhancement (CodeFormer / GFPGAN / passthrough)
-Enhanced MP4
-    │
-    ▼  Step 5 — Background Composite (VideoAssembler)
-Framed MP4 (9:16 / 16:9 / 1:1)
-    │
-    ▼  Step 6 — Captions (faster-whisper → SRT)
-SRT subtitle file
-    │
-    ▼  Step 7 — Final Encode (FFmpeg H.264/AAC +faststart)
-Deliverable MP4
-```
+| Workflow | Input | Output |
+| --- | --- | --- |
+| TTS | Text | Local WAV audio from Kokoro or Bark. |
+| Voice Studio | Reference audio | Saved MLX voice profile and generated/converted speech. |
+| Audio Lipsync | Avatar + uploaded audio | Lip-synced MP4. |
+| Text Lipsync | Avatar + script | Final captioned avatar MP4. |
+| Podcast | Two avatars + script or audio tracks | Two-speaker podcast MP4. |
+| Slide Narrator | PDF + narration JSON | Narrated slideshow MP4. |
+| Slide Presenter | PDF + JSON + avatar | Per-slide presenter clips, composites, and optional export MP4. |
 
-**Models used (all local, all free):**
+## Current Stack
 
-| Step | Model | Size | License |
-|------|-------|------|---------|
-| TTS | Kokoro-82M | ~330 MB | MIT |
-| Lip-sync (default) | MuseTalk 1.5 | ~3 GB | Apache 2.0 |
-| Lip-sync (alt) | SadTalker | ~1.7 GB | MIT |
-| Captions | faster-whisper (large-v3) | ~3 GB | MIT |
-| Face enhancement | CodeFormer / GFPGAN | optional | — |
-
----
-
-## Project Structure
-
-```
-ai-avatar-video-generation/
-│
-├── src/avatarpipeline/       # Core library package
-│   ├── core/                 # config, protocols, shared media helpers
-│   ├── engines/              # TTS and lip-sync backends
-│   ├── pipelines/            # avatar, narration, presenter, podcast pipelines
-│   └── postprocess/          # enhance, captions, assemble/finalize
-│
-├── app/
-│   └── dashboard.py          # Gradio web dashboard
-│
-├── scripts/
-│   ├── run_dashboard.py      # ← Start the dashboard (main entry point)
-│   ├── run_pipeline.py       # CLI pipeline runner
-│   └── smoke_test.sh         # End-to-end integration test
-│
-├── install/
-│   ├── setup.sh              # system deps, Python venv, MuseTalk
-│   └── install_latentsync.sh # optional legacy LatentSync installer
-│
-├── configs/
-│   └── settings.yaml         # All pipeline settings
-│
-├── assets/
-│   ├── logo.png
-│   └── favicon.png
-│
-├── tests/
-│   ├── unit/
-│   └── integration/
-│
-├── data/                     # Runtime data — git-ignored
-│   ├── avatars/              # avatar.png lives here
-│   ├── audio/                # TTS output WAVs
-│   ├── output/               # Generated MP4s
-│   ├── captions/             # SRT subtitle files
-│   └── temp/                 # Intermediate files
-│
-├── pyproject.toml
-├── .env                      # Optional: HF_TOKEN etc. (git-ignored)
-└── README.md
-```
-
----
+| Area | Implementation |
+| --- | --- |
+| App | Gradio dashboard in `app/dashboard.py`. |
+| Package | Python source under `src/avatarpipeline/`. |
+| TTS | Kokoro, Bark, and MLX/Qwen voice tools. |
+| Lip-sync | MuseTalk 1.5 by default; optional SadTalker 256 px and SadTalker HD. |
+| Enhancement | CodeFormer, GFPGAN, or passthrough depending on local availability. |
+| Captions | faster-whisper SRT generation, burned in with FFmpeg. |
+| Video assembly | FFmpeg H.264/AAC outputs for 9:16, 16:9, and 1:1. |
 
 ## Quick Start
 
-### 1. Install system dependencies
+Install the system tools first:
 
 ```bash
 brew install python@3.10 git ffmpeg uv espeak-ng
 ```
 
-### 2. Set up the Python environment
+Set up the project and MuseTalk:
 
 ```bash
-cd ai-avatar-video-generation
 bash install/setup.sh
+source .venv/bin/activate
 ```
 
-Creates `.venv/` with Python 3.10 and all Python dependencies.
-
-### 3. Install SadTalker (optional lip-sync model)
-
-SadTalker is already installed at `~/SadTalker` with its own venv.
-To reinstall:
-
-```bash
-git clone https://github.com/OpenTalker/SadTalker.git ~/SadTalker
-cd ~/SadTalker && uv venv sadtalker-env --python 3.10
-bash scripts/download_models.sh
-```
-
-### 4. Add your avatar
-
-```bash
-# Copy a portrait PNG into the data directory
-cp /path/to/portrait.png data/avatars/avatar.png
-```
-
-Or upload it via the dashboard UI.
-
----
-
-## Starting the Dashboard
+Start the dashboard:
 
 ```bash
 python scripts/run_dashboard.py
 ```
 
-Opens automatically at **http://localhost:7860**.
+The app opens on `http://127.0.0.1:7860` or the next free port.
 
-Optional flags:
+Useful dashboard launch options:
 
 ```bash
-python scripts/run_dashboard.py --port 7861        # custom port
-python scripts/run_dashboard.py --no-browser       # no auto-open
-python scripts/run_dashboard.py --host 0.0.0.0     # expose on LAN
-python scripts/run_dashboard.py --share            # Gradio public link
+python scripts/run_dashboard.py --port 7861
+python scripts/run_dashboard.py --no-browser
+python scripts/run_dashboard.py --host 0.0.0.0
+python scripts/run_dashboard.py --share
 ```
 
-### Dashboard walkthrough
+## Required Local Paths
 
-1. **Avatar** — Upload a portrait PNG or select from the gallery. The full image is visible (not cropped).
-2. **Script** — Type the text your avatar will speak. Character count updates live.
-3. **Voice** — 10 Kokoro voices available. Use the preview button to audition each one.
-4. **Video Settings** — Choose orientation (9:16 / 16:9 / 1:1), optional background music, optional background image.
-5. **Advanced Options** — Toggle LatentSync vs MuseTalk, face enhancement, captions, preview mode, caption styling.
-6. **Generate Video** — Starts the pipeline. Live log shows progress for all 7 steps with timing.
-7. **Output** — Finished video plays inline. Metadata panel shows resolution, duration, file size, and generation time.
+| Path | Purpose |
+| --- | --- |
+| `.venv/` | Project Python environment. |
+| `~/MuseTalk/` | MuseTalk checkout and model files used by the default lip-sync engine. |
+| `~/MuseTalk/musetalk-env/` | MuseTalk Python environment. |
+| `~/SadTalker/` | Optional SadTalker checkout for SadTalker engines. |
+| `data/avatars/avatar.png` | Default avatar for CLI runs. |
+| `data/output/` | Generated videos. |
+| `data/presentations/` | Slide presenter projects and exports. |
+| `data/voices/` | Saved MLX voice profiles. |
 
----
+## Running From the CLI
 
-## CLI Usage
+Use the CLI for repeatable single-avatar text-to-video runs:
 
 ```bash
-# Basic (portrait 9:16, default voice)
 python scripts/run_pipeline.py \
-  --script "Hello, I'm your AI avatar — nice to meet you!" \
-  --out data/output/my_video.mp4
+  --script "Hello, this is Avatar Studio." \
+  --voice af_heart \
+  --orientation 9:16 \
+  --engine musetalk \
+  --out data/output/example.mp4
+```
 
-# British male voice, landscape orientation
+Fast preview run:
+
+```bash
 python scripts/run_pipeline.py \
-  --script "Welcome to the briefing." \
-  --voice bm_george \
-  --orientation 16:9
+  --script "Quick local test." \
+  --no-enhance \
+  --no-captions
+```
 
-# Fast preview — skip face enhancement and captions
-python scripts/run_pipeline.py \
-  --script "Quick test." \
-  --no-enhance --no-captions
+List Kokoro voices:
 
-# List all available voices
+```bash
 python scripts/run_pipeline.py --list-voices
 ```
 
-**All flags:**
+CLI engine choices are `musetalk`, `sadtalker`, and `sadtalker_hd`.
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--script TEXT` | _(required)_ | Spoken script text |
-| `--orientation` | `9:16` | `9:16` \| `16:9` \| `1:1` |
-| `--voice TEXT` | `af_heart` | Kokoro voice ID |
-| `--out TEXT` | `data/output/final.mp4` | Output MP4 path |
-| `--background TEXT` | `black` | `black` \| `white` \| `blur` \| path to image |
-| `--music TEXT` | _(none)_ | Background music file |
-| `--preview` | off | Open result in default player |
-| `--no-captions` | off | Skip subtitle generation |
-| `--no-enhance` | off | Skip face enhancement |
-| `--musetalk` | off | Use MuseTalk instead of LatentSync |
+## Project Layout
 
----
-
-## Running Tests
-
-```bash
-# Full unit test suite (17 tests, ~30s)
-python -m pytest tests/ -v
-
-# End-to-end smoke test
-bash scripts/smoke_test.sh --no-enhance --no-captions
+```text
+ai-avatar-video-generation/
+  app/                         Gradio dashboard
+  assets/                      Logo and favicon
+  configs/                     Runtime settings
+  data/                        Local runtime data, outputs, and temporary files
+  doc/                         Setup manual and pipeline reference
+  install/                     Setup scripts for external model environments
+  scripts/                     Dashboard, CLI, smoke test, maintenance entry points
+  src/avatarpipeline/          Core package, engines, pipelines, postprocess helpers
+  tests/                       Unit and integration tests
+  tools/                       Standalone helper scripts
 ```
-
----
 
 ## Configuration
 
-Edit `configs/settings.yaml` to adjust pipeline behaviour:
+Edit `configs/settings.yaml` when you want stable defaults for repeated runs.
+The main settings are:
 
-```yaml
-musetalk_dir: "~/MuseTalk"
-comfyui_dir:  "~/ComfyUI"
+| Setting | Purpose |
+| --- | --- |
+| `musetalk_dir` | Location of the MuseTalk checkout. |
+| `sadtalker_dir` | Location of the optional SadTalker checkout. |
+| `lipsync.default_engine` | Default engine key. |
+| `musetalk.default_batch_size` | MuseTalk throughput/memory tradeoff. |
+| `musetalk.default_bbox_shift` | MuseTalk lip-region adjustment. |
+| `tts.default_voice` | Default Kokoro voice. |
+| `bark.model_id` | Bark model variant. |
 
-latentsync:
-  inference_steps: 25     # higher = better quality, slower
-  lips_expression: 1.5    # lip movement intensity
-  face_resolution: 512
+Most generated files are intentionally written under `data/` and are not part
+of the source package.
 
-tts:
-  engine: "kokoro"
-  default_voice: "af_heart"
-  speed: 1.0
-  lang_code: "a"          # 'a' = American, 'b' = British
-```
+## Validation
 
----
-
-## Available Voices
-
-| ID | Description |
-|----|-------------|
-| `af_heart` | American Female — warm, clear (default) |
-| `af_bella` | American Female — smooth, confident |
-| `af_sarah` | American Female — natural, conversational |
-| `af_nicole` | American Female — soft, friendly |
-| `am_adam` | American Male — deep |
-| `am_michael` | American Male — conversational |
-| `bf_emma` | British Female — clear |
-| `bf_isabella` | British Female — warm |
-| `bm_george` | British Male — authoritative |
-| `bm_lewis` | British Male — natural |
-
----
-
-## Architecture Notes
-
-`src/avatarpipeline/` is a proper Python package. Import any class directly:
-
-```python
-from avatarpipeline.engines.tts.kokoro import VoiceGenerator
-from avatarpipeline.engines.lipsync.musetalk import MuseTalkInference
-from avatarpipeline.postprocess.assembler import VideoAssembler
-from avatarpipeline.pipelines.avatar import run_pipeline
-```
-
-`avatarpipeline/__init__.py` exports `ROOT`, `AVATARS_DIR`, `AUDIO_DIR`, `OUTPUT_DIR`, `CAPTIONS_DIR`, `TEMP_DIR` as `Path` constants so every module resolves paths consistently relative to the project root.
-
-`app/dashboard.py` is a consumer of the library, not part of it. `scripts/` contains thin entry-point wrappers that add `src/` to `sys.path` and delegate to the library.
-
----
-
-## MPS Troubleshooting
-
-The pipeline automatically sets:
+Run the lightweight test suite:
 
 ```bash
-PYTORCH_ENABLE_MPS_FALLBACK=1       # fall back to CPU for unsupported ops
-PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0  # prevent OOM
+python -m pytest tests/unit tests/integration -v
 ```
 
-| Symptom | Fix |
-|---------|-----|
-| `MPS backend out of memory` | Close other GPU apps; add `--no-enhance` |
-| LatentSync faces blurry | Raise `inference_steps` in `configs/settings.yaml` |
-| Black frames | Use a clear front-facing portrait, ≥ 256×256 px |
-| `faster-whisper` slow | Expected — CPU int8 is used (MPS unsupported by faster-whisper) |
+Run a real smoke test after models are installed:
 
----
+```bash
+bash scripts/smoke_test.sh --no-enhance --no-captions
+```
 
-## Requirements
+The smoke test creates a short MP4 and validates video stream, audio stream,
+duration, and file size.
 
-- macOS 14+ with Apple Silicon (M1 / M2 / M3 / M4)
-- Python 3.10
-- FFmpeg (`brew install ffmpeg`)
-- espeak-ng (`brew install espeak-ng`)
-- ~10 GB free disk space for models
+## Notes
 
----
+The current product path uses MuseTalk and SadTalker for lip-sync. Older
+LatentSync documentation was removed because it no longer describes the active
+dashboard or CLI pipeline.
 
-## License
-
-MIT — see [LICENSE](LICENSE).
+License: Apache 2.0. See [LICENSE](LICENSE).
