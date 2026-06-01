@@ -3363,7 +3363,8 @@ CSS += """
     display: block !important;
     overflow: visible !important;
     opacity: 1 !important;
-    pointer-events: none !important;
+    pointer-events: auto !important;
+    clip-path: inset(0 calc(100% - 280px) 0 0) !important;
     padding: 0 !important;
     margin: 0 !important;
     border: 0 !important;
@@ -3390,6 +3391,9 @@ CSS += """
     flex-direction: column !important;
     align-items: stretch !important;
     gap: 8px !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
     padding: 0 !important;
     margin: 0 !important;
     border: 0 !important;
@@ -3448,6 +3452,14 @@ CSS += """
     font-weight: 400;
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
+
+.tabs > .tab-wrapper button[data-tab-id="tab-tts"]::before { content: "text_fields" !important; }
+.tabs > .tab-wrapper button[data-tab-id="tab-voice-studio"]::before { content: "graphic_eq" !important; }
+.tabs > .tab-wrapper button[data-tab-id="tab-a2l"]::before { content: "spatial_audio_off" !important; }
+.tabs > .tab-wrapper button[data-tab-id="tab-t2l"]::before { content: "movie_edit" !important; }
+.tabs > .tab-wrapper button[data-tab-id="tab-podcast"]::before { content: "podcasts" !important; }
+.tabs > .tab-wrapper button[data-tab-id="tab-narration"]::before { content: "slideshow" !important; }
+.tabs > .tab-wrapper button[data-tab-id="tab-slide-presenter"]::before { content: "present_to_all" !important; }
 
 .tabs > .tab-wrapper button[role="tab"][aria-selected="true"]::before,
 .tabs > .tab-wrapper button[role="tab"].selected::before {
